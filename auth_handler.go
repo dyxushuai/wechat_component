@@ -6,12 +6,9 @@ import (
 	"encoding/xml"
 	"log"
 	"net/http"
-)
 
-type AuthHandler interface {
-	http.Handler
-	GetTicket() string // 定时获取ticket
-}
+	"git.ishopex.cn/xushuai/wechat/lib"
+)
 
 type AuthResult struct {
 	AppId                 string
@@ -25,29 +22,29 @@ func (ar *AuthResult) isTicket() bool {
 	return ar.InfoType == "component_verify_ticket"
 }
 
-type AuthHandle struct {
+type authHandle struct {
 	token      string
-	cipher     IOChipher
+	cipher     lib.IOChipher
 	ticketChan chan string
 }
 
-func NewAuthHandle(token, encodingAESKey, appID string) (*AuthHandle, error) {
-	c, err := NewCipher(token, encodingAESKey, appID)
+func newAuthHandle(token, key, appID string) (*authHandle, error) {
+	c, err := lib.NewCipher(token, key, appID)
 	if err != nil {
 		return nil, err
 	}
-	return &AuthHandle{
+	return &authHandle{
 		token:      token,
 		cipher:     c,
 		ticketChan: make(chan string),
 	}, nil
 }
 
-func (ah *AuthHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (ah *authHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 微信要求返回 success
 	defer w.Write([]byte("success"))
 
-	if !checkSignature(ah.token, w, r) {
+	if !lib.CheckSignature(ah.token, w, r) {
 		log.Println("sign error form weixin paltform")
 		return
 	}
@@ -69,6 +66,6 @@ func (ah *AuthHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (ah *AuthHandle) GetTicket() string {
-	return <-ah.ticketChan
+func (ah *authHandle) getTicket() <-chan string {
+	return ah.ticketChan
 }
