@@ -1,14 +1,31 @@
-package wechat
+package lib
 
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"math/rand"
 	"net/http"
 	"sort"
+	"time"
 )
 
+var (
+	chars       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	defaultRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+)
+
+// 生成nonce
+func createNonceStr(length int) string {
+	var str string
+	for i := 0; i < length; i++ {
+		tmpI := defaultRand.Intn(len(chars) - 1)
+		str += chars[tmpI : tmpI+1]
+	}
+	return str
+}
+
 // 微信公众号 明文模式/URL认证 签名
-func sign(token, timestamp, nonce string) (signature string) {
+func Sign(token, timestamp, nonce string) (signature string) {
 	strs := sort.StringSlice{token, timestamp, nonce}
 	strs.Sort()
 
@@ -24,7 +41,7 @@ func sign(token, timestamp, nonce string) (signature string) {
 }
 
 // 微信公众号/企业号 密文模式消息签名
-func msgSign(token, timestamp, nonce, encryptedMsg string) (signature string) {
+func MsgSign(token, timestamp, nonce, encryptedMsg string) (signature string) {
 	strs := sort.StringSlice{token, timestamp, nonce, encryptedMsg}
 	strs.Sort()
 
@@ -40,11 +57,11 @@ func msgSign(token, timestamp, nonce, encryptedMsg string) (signature string) {
 	return hex.EncodeToString(hashsum[:])
 }
 
-func checkSignature(t string, w http.ResponseWriter, r *http.Request) bool {
+func CheckSignature(t string, w http.ResponseWriter, r *http.Request) bool {
 	r.ParseForm()
 	signature := r.FormValue("signature")
 	timestamp := r.FormValue("timestamp")
 	nonce := r.FormValue("nonce")
 
-	return sign(t, timestamp, nonce) == signature
+	return Sign(t, timestamp, nonce) == signature
 }

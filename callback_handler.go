@@ -2,13 +2,11 @@
 
 package wechat
 
-import (
-	"net/http"
-)
+import "net/http"
 
-type CBHandler interface {
-	http.Handler
+type cbHandle struct {
 }
 
-type CBHandle struct {
+func (cb *cbHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
 }

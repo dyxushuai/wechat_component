@@ -1,4 +1,4 @@
-package wechat
+package lib
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -18,8 +19,6 @@ import (
 )
 
 // 用于微信消息的加解密
-// copy form https://github.com/heroicyang/wechat-crypter
-// author heroicyang (me@heroicyang.com)
 // messageCrypter 封装了生成签名和消息加解密的方法
 type messageCrypter struct {
 	token string
@@ -49,6 +48,22 @@ func newmessageCrypter(token, encodingAESKey, appID string) (messageCrypter, err
 		key,
 		iv,
 	}, nil
+}
+
+func aesKeyDecode(encodedAESKey string) (key []byte, err error) {
+	if len(encodedAESKey) != 43 {
+		err = errors.New("the length of encodedAESKey must be equal to 43")
+		return
+	}
+	key, err = base64.StdEncoding.DecodeString(encodedAESKey + "=")
+	if err != nil {
+		return
+	}
+	if len(key) != 32 {
+		err = errors.New("encodingAESKey invalid")
+		return
+	}
+	return
 }
 
 // getSignature 方法用于返回签名
@@ -162,7 +177,7 @@ type Cipher struct {
 	token string
 }
 
-func NewCipher(token, encodingAESKey, appID string) (*Cipher, error) {
+func NewCipher(token, encodingAESKey, appID string) (IOChipher, error) {
 	mc, err := newmessageCrypter(token, encodingAESKey, appID)
 	if err != nil {
 		return nil, err
@@ -174,10 +189,19 @@ func NewCipher(token, encodingAESKey, appID string) (*Cipher, error) {
 	}, nil
 }
 
+// xml cdata
+type charData struct {
+	Text []byte `xml:",innerxml"`
+}
+
+func newCharData(s string) charData {
+	return charData{[]byte("<![CDATA[" + s + "]]>")}
+}
+
 type cipherToWX struct {
 	XMLName      xml.Name `xml:"xml"`
-	Encrypt      CharData
-	MsgSignature CharData
+	Encrypt      charData
+	MsgSignature charData
 	TimeStamp    string
 }
 
@@ -189,11 +213,11 @@ func (c *Cipher) Encrypt(w io.Writer, b []byte) (err error) {
 	}
 
 	to := &cipherToWX{
-		Encrypt:   NewCharData(result),
+		Encrypt:   newCharData(result),
 		TimeStamp: strconv.FormatInt(time.Now().Unix(), 10),
 	}
 	// timestamp, nonce, encryptedMsg string)
-	to.MsgSignature = NewCharData(msgSign(c.token, to.TimeStamp, createNonceStr(16), result))
+	to.MsgSignature = newCharData(MsgSign(c.token, to.TimeStamp, createNonceStr(16), result))
 	err = xml.NewEncoder(w).Encode(to)
 	return
 }
