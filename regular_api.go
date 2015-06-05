@@ -5,9 +5,9 @@ package wechat
 import (
 	"fmt"
 	"log"
-	"net/http"
-	"net/url"
 	"time"
+
+	"github.com/franela/goreq"
 )
 
 type RegularApi interface {
@@ -44,11 +44,24 @@ type regularApi struct {
 
 // 获取第三方平台令牌
 func (ra *regularApi) GetAccessToken(ticket string) (string, time.Duration) {
-	postForm := url.Values{}
-	postForm.Set("component_appid", ra.wt.appId)
-	postForm.Set("component_appsecret", ra.wt.appSecret)
-	postForm.Set("component_verify_ticket", ticket)
-	res, err := http.PostForm(apiComponentToken, postForm)
+
+	postForm := struct {
+		Component_appid         string `json:"component_appid"`
+		Component_appsecret     string `json:"component_appsecret"`
+		Component_verify_ticket string `json:"component_verify_ticket"`
+	}{
+		Component_appid:         ra.wt.appId,
+		Component_appsecret:     ra.wt.appSecret,
+		Component_verify_ticket: ticket,
+	}
+	log.Println(postForm)
+
+	res, err := goreq.Request{
+		Method:    "POST",
+		Uri:       apiComponentToken,
+		Body:      postForm,
+		ShowDebug: true,
+	}.Do()
 
 	result := &struct {
 		CAT       string `json:"component_access_token"`
@@ -71,9 +84,17 @@ func (ra *regularApi) GetAccessToken(ticket string) (string, time.Duration) {
 
 // 获取预授权码，用于公众号oauth
 func (ra *regularApi) GetPreAuthCode(accessToken string) (string, time.Duration) {
-	postForm := url.Values{}
-	postForm.Set("component_appid", ra.wt.appId)
-	res, err := http.PostForm(fmt.Sprintf(apiCreatePreAuthCode, accessToken), postForm)
+	postForm := struct {
+		Component_appid string `json:"component_appid"`
+	}{
+		Component_appid: ra.wt.appId,
+	}
+
+	res, err := goreq.Request{
+		Method: "POST",
+		Uri:    fmt.Sprintf(apiCreatePreAuthCode, accessToken),
+		Body:   postForm,
+	}.Do()
 
 	result := &struct {
 		PAC       string `json:"pre_auth_code"`

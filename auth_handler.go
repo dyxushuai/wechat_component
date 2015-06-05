@@ -4,7 +4,7 @@ package wechat
 
 import (
 	"encoding/xml"
-	"log"
+	"errors"
 	"net/http"
 
 	"git.ishopex.cn/xushuai/wechat/lib"
@@ -18,54 +18,47 @@ type AuthResult struct {
 	AuthorizerAppid       string
 }
 
-func (ar *AuthResult) isTicket() bool {
+type AuthHandler interface {
+	M(http.ResponseWriter, *http.Request) (*AuthResult, error)
+}
+
+func (ar *AuthResult) IsTicket() bool {
 	return ar.InfoType == "component_verify_ticket"
 }
 
 type authHandle struct {
-	token      string
-	cipher     lib.IOChipher
-	ticketChan chan string
+	wt     *WechatThird
+	cipher lib.IOChipher
 }
 
-func newAuthHandle(token, key, appID string) (*authHandle, error) {
-	c, err := lib.NewCipher(token, key, appID)
+func newAuthHandle(wt *WechatThird) (*authHandle, error) {
+	c, err := lib.NewCipher(wt.token, wt.cryptoKey, wt.appId)
 	if err != nil {
 		return nil, err
 	}
 	return &authHandle{
-		token:      token,
-		cipher:     c,
-		ticketChan: make(chan string),
+		wt:     wt,
+		cipher: c,
 	}, nil
 }
 
-func (ah *authHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// 微信要求返回 success
+func (ah *authHandle) M(w http.ResponseWriter, r *http.Request) (*AuthResult, error) {
 	defer w.Write([]byte("success"))
 
-	if !lib.CheckSignature(ah.token, w, r) {
-		log.Println("sign error form weixin paltform")
-		return
+	if !lib.CheckSignature(ah.wt.token, w, r) {
+		return nil, errors.New("sign error form weixin paltform")
 	}
 	data, err := ah.cipher.Decrypt(r.Body)
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
 
 	ar := &AuthResult{}
 
 	err = xml.Unmarshal(data, ar)
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
-	if ar.isTicket() {
-		ah.ticketChan <- ar.ComponentVerifyTicket
-	}
-}
 
-func (ah *authHandle) getTicket() <-chan string {
-	return ah.ticketChan
+	return ar, nil
 }

@@ -2,8 +2,9 @@ package wechat
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
+
+	"github.com/franela/goreq"
+	"github.com/parnurzeal/gorequest"
 )
 
 type NormalApi interface {
@@ -15,7 +16,8 @@ type NormalApi interface {
 }
 
 type normalApi struct {
-	wt *WechatThird
+	wt      *WechatThird
+	request *gorequest.SuperAgent
 }
 
 type PublicInfo struct {
@@ -33,10 +35,19 @@ type PublicInfo struct {
 }
 
 func (na *normalApi) GetPublicInfo(accessToken, authCode string) (*PublicInfo, *ApiError, error) {
-	postForm := url.Values{}
-	postForm.Set("component_appid", na.wt.appId)
-	postForm.Set("authorization_code", authCode)
-	res, err := http.PostForm(fmt.Sprintf(apiQueryAuth, accessToken), postForm)
+	postForm := struct {
+		component_appid    string
+		authorization_code string
+	}{
+		component_appid:    na.wt.appId,
+		authorization_code: authCode,
+	}
+
+	res, err := goreq.Request{
+		Method: "POST",
+		Uri:    fmt.Sprintf(apiQueryAuth, accessToken),
+		Body:   postForm,
+	}.Do()
 	if err != nil {
 		return nil, nil, err
 
@@ -65,15 +76,27 @@ type PublicToken struct {
 // appId authorizer appId
 // refreshToken authorizer refresh token
 func (na *normalApi) GetAuthAccessToken(accessToken, appId, refreshToken string) (*PublicToken, *ApiError, error) {
-	postForm := url.Values{}
-	postForm.Set("component_appid", na.wt.appId)
-	postForm.Set("authorizer_appid", appId)
-	postForm.Set("authorizer_refresh_token", refreshToken)
-	res, err := http.PostForm(fmt.Sprintf(apiAuthorizerToken, accessToken), postForm)
+
+	postForm := struct {
+		Component_appid          string `json:"component_appid"`
+		Authorizer_appid         string `json:"authorizer_appid"`
+		Authorizer_refresh_token string `json:"authorizer_refresh_token"`
+	}{
+		Component_appid:          na.wt.appId,
+		Authorizer_appid:         appId,
+		Authorizer_refresh_token: refreshToken,
+	}
+
+	res, err := goreq.Request{
+		Method: "POST",
+		Uri:    fmt.Sprintf(apiAuthorizerToken, accessToken),
+		Body:   postForm,
+	}.Do()
 	if err != nil {
 		return nil, nil, err
 
 	}
+
 	result := &PublicToken{}
 
 	ae, err := unmarshalResponseToJson(res, result)
@@ -112,10 +135,20 @@ type PublicProfile struct {
 }
 
 func (na *normalApi) GetAuthProfile(accessToken, appId string) (*PublicProfile, *ApiError, error) {
-	postForm := url.Values{}
-	postForm.Set("component_appid", na.wt.appId)
-	postForm.Set("authorizer_appid", appId)
-	res, err := http.PostForm(fmt.Sprintf(apiGetAuthorizerInfo, accessToken), postForm)
+
+	postForm := struct {
+		Component_appid  string `json:"component_appid"`
+		Authorizer_appid string `json:"authorizer_appid"`
+	}{
+		Component_appid:  na.wt.appId,
+		Authorizer_appid: appId,
+	}
+
+	res, err := goreq.Request{
+		Method: "POST",
+		Uri:    fmt.Sprintf(apiGetAuthorizerInfo, accessToken),
+		Body:   postForm,
+	}.Do()
 	if err != nil {
 		return nil, nil, err
 
@@ -140,11 +173,21 @@ type PublicOption struct {
 }
 
 func (na *normalApi) GetAuthOption(accessToken, appId, option string) (*PublicOption, *ApiError, error) {
-	postForm := url.Values{}
-	postForm.Set("component_appid", na.wt.appId)
-	postForm.Set("authorizer_appid", appId)
-	postForm.Set("option_name", option)
-	res, err := http.PostForm(fmt.Sprintf(apiGetAuthorizerOption, accessToken), postForm)
+	postForm := struct {
+		Component_appid  string `json:"component_appid"`
+		Authorizer_appid string `json:"authorizer_appid"`
+		Option_name      string `json:"option_name"`
+	}{
+		Component_appid:  na.wt.appId,
+		Authorizer_appid: appId,
+		Option_name:      option,
+	}
+
+	res, err := goreq.Request{
+		Method: "POST",
+		Uri:    fmt.Sprintf(apiGetAuthorizerOption, accessToken),
+		Body:   postForm,
+	}.Do()
 	if err != nil {
 		return nil, nil, err
 
@@ -163,12 +206,23 @@ func (na *normalApi) GetAuthOption(accessToken, appId, option string) (*PublicOp
 }
 
 func (na *normalApi) SetAuthOption(accessToken, appId, optionName, optionValue string) (*ApiError, error) {
-	postForm := url.Values{}
-	postForm.Set("component_appid", na.wt.appId)
-	postForm.Set("authorizer_appid", appId)
-	postForm.Set("option_name", optionName)
-	postForm.Set("option_value", optionValue)
-	res, err := http.PostForm(fmt.Sprintf(apiSetAuthorizerOption, accessToken), postForm)
+	postForm := struct {
+		Component_appid  string `json:"component_appid"`
+		Authorizer_appid string `json:"authorizer_appid"`
+		Option_name      string `json:"option_name"`
+		Option_value     string `json:"option_value"`
+	}{
+		Component_appid:  na.wt.appId,
+		Authorizer_appid: appId,
+		Option_name:      optionName,
+		Option_value:     optionValue,
+	}
+
+	res, err := goreq.Request{
+		Method: "POST",
+		Uri:    fmt.Sprintf(apiSetAuthorizerOption, accessToken),
+		Body:   postForm,
+	}.Do()
 	if err != nil {
 		return nil, err
 
