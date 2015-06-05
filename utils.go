@@ -1,24 +1,15 @@
 package wechat
 
-import (
-	"encoding/json"
-	"net/http"
-)
+import "github.com/franela/goreq"
 
-func unmarshalResponseToJson(res *http.Response, v interface{}) (*ApiError, error) {
-	defer res.Body.Close()
-
-	d := json.NewDecoder(res.Body)
-
+func unmarshalResponseToJson(res *goreq.Response, v interface{}) (*ApiError, error) {
 	apiErr := &ApiError{}
-
-	err := d.Decode(apiErr)
+	err := res.Body.FromJsonTo(apiErr)
 	if err != nil {
 		return nil, err
 	}
 	if apiErr.isError() {
 		return apiErr, nil
 	}
-
-	return nil, d.Decode(v)
+	return nil, res.Body.FromJsonTo(v)
 }

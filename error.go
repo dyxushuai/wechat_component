@@ -2,10 +2,10 @@
 package wechat
 
 type ApiError struct {
-	ErrCode string `json:"errcode"`
+	ErrCode int64  `json:"errcode"`
 	ErrMsg  string `json:"errmsg"`
 }
 
 func (a *ApiError) isError() bool {
-	return a.ErrCode != ""
+	return a.ErrMsg != ""
 }

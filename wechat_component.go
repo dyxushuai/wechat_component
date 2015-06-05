@@ -20,27 +20,20 @@ var (
 
 // 微信第三方平台interface
 type WechatComponent interface {
-	GetAuthHandler() http.Handler
+	GetAuthHandler() (AuthHandler, error)
 	GetCBHandler() http.Handler
 	GetRegularApi() RegularApi
 	GetNormalApi() NormalApi
 	OAuthUrl(redirectUrl, preAuthCode string) string
 }
 
-func New(appId, appSecret, cryptoKey, token string) (WechatComponent, error) {
-	ah, err := newAuthHandle(token, cryptoKey, appId)
-	if err != nil {
-		return nil, err
-	}
-
+func New(appId, appSecret, cryptoKey, token string) WechatComponent {
 	return &WechatThird{
 		appId:     appId,
 		appSecret: appSecret,
 		cryptoKey: cryptoKey,
 		token:     token,
-		auth:      ah,
-	}, nil
-
+	}
 }
 
 // 微信第三方公众号平台 实现 ServeHTTP interface
@@ -49,18 +42,15 @@ type WechatThird struct {
 	appSecret string // 第三方应用secret
 	cryptoKey string // 公众号消息加解密Key
 	token     string // 公众号消息校验Token
-	auth      *authHandle
-	callback  *cbHandle
 }
 
-func (wt *WechatThird) GetAuthHandler() http.Handler {
-
-	return wt.auth
+func (wt *WechatThird) GetAuthHandler() (AuthHandler, error) {
+	return newAuthHandle(wt)
 }
 
 func (wt *WechatThird) GetCBHandler() http.Handler {
 
-	return wt.callback
+	return nil
 }
 
 func (wt *WechatThird) GetRegularApi() RegularApi {
