@@ -1,8 +1,9 @@
 package wechat
 
 import (
+	"git.ishopex.cn/xushuai/wechat/lib"
+
 	"fmt"
-	"net/http"
 )
 
 var (
@@ -20,11 +21,10 @@ var (
 
 // 微信第三方平台interface
 type WechatComponent interface {
-	GetAuthHandler() (AuthHandler, error)
-	GetCBHandler() http.Handler
 	GetRegularApi() RegularApi
 	GetNormalApi() NormalApi
 	OAuthUrl(redirectUrl, preAuthCode string) string
+	GetCipher() (lib.IOCipher, error)
 }
 
 func New(appId, appSecret, cryptoKey, token string) WechatComponent {
@@ -44,15 +44,6 @@ type WechatThird struct {
 	token     string // 公众号消息校验Token
 }
 
-func (wt *WechatThird) GetAuthHandler() (AuthHandler, error) {
-	return newAuthHandle(wt)
-}
-
-func (wt *WechatThird) GetCBHandler() http.Handler {
-
-	return nil
-}
-
 func (wt *WechatThird) GetRegularApi() RegularApi {
 	return &regularApi{
 		wt: wt,
@@ -63,7 +54,12 @@ func (wt *WechatThird) GetNormalApi() NormalApi {
 		wt: wt,
 	}
 }
+func (wt *WechatThird) GetCipher() (lib.IOCipher, error) {
+	return lib.NewCipher(wt.token, wt.cryptoKey, wt.appId)
+}
 
 func (wt *WechatThird) OAuthUrl(redirectUrl, preAuthCode string) string {
-	return fmt.Sprintf(oauthUrl, wt.appId, preAuthCode, redirectUrl)
+	u, _ := UrlEncoded(redirectUrl)
+
+	return fmt.Sprintf(oauthUrl, wt.appId, preAuthCode, u)
 }

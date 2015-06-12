@@ -1,15 +1,32 @@
 package wechat
 
-import "github.com/franela/goreq"
+import (
+	"encoding/json"
+	"io/ioutil"
+	"net/url"
 
-func unmarshalResponseToJson(res *goreq.Response, v interface{}) (*ApiError, error) {
+	"github.com/franela/goreq"
+)
+
+func unmarshalResponseToJson(res *goreq.Response, v interface{}) error {
+	b, err := ioutil.ReadAll(res.Body)
 	apiErr := &ApiError{}
-	err := res.Body.FromJsonTo(apiErr)
+
+	err = json.Unmarshal(b, apiErr)
+
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if apiErr.isError() {
-		return apiErr, nil
+		return apiErr
 	}
-	return nil, res.Body.FromJsonTo(v)
+	return json.Unmarshal(b, v)
+}
+
+func UrlEncoded(str string) (string, error) {
+	u, err := url.Parse(str)
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
 }

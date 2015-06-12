@@ -8,11 +8,11 @@ import (
 )
 
 type NormalApi interface {
-	GetPublicInfo(accessToken, authCode string) (*PublicInfo, *ApiError, error)
-	GetAuthAccessToken(accessToken, appId, refreshToken string) (*PublicToken, *ApiError, error)
-	GetAuthProfile(accessToken, appId string) (*PublicProfile, *ApiError, error)
-	GetAuthOption(accessToken, appId, option string) (*PublicOption, *ApiError, error)
-	SetAuthOption(accessToken, appId, optionName, optionValue string) (*ApiError, error)
+	GetPublicInfo(accessToken, authCode string) (*PublicInfo, error)
+	GetAuthAccessToken(accessToken, appId, refreshToken string) (*PublicToken, error)
+	GetAuthProfile(accessToken, appId string) (*PublicProfile, error)
+	GetAuthOption(accessToken, appId, option string) (*PublicOption, error)
+	SetAuthOption(accessToken, appId, optionName, optionValue string) error
 }
 
 type normalApi struct {
@@ -22,10 +22,10 @@ type normalApi struct {
 
 type PublicInfo struct {
 	AuthorizationInfo struct {
-		AppId        string `json:"authorizer_appid"`
-		AccessToken  string `json:"authorizer_access_token"`
-		ExpiresIn    int64  `json:"expires_in"`
-		RefreshToken string `json:"authorizer_refresh_token"`
+		AppId        string  `json:"authorizer_appid"`
+		AccessToken  string  `json:"authorizer_access_token"`
+		ExpiresIn    float64 `json:"expires_in"`
+		RefreshToken string  `json:"authorizer_refresh_token"`
 		FuncInfo     []struct {
 			Funcscope struct {
 				Id int64 `json:"id"`
@@ -34,48 +34,45 @@ type PublicInfo struct {
 	} `json:"authorization_info"`
 }
 
-func (na *normalApi) GetPublicInfo(accessToken, authCode string) (*PublicInfo, *ApiError, error) {
+func (na *normalApi) GetPublicInfo(accessToken, authCode string) (*PublicInfo, error) {
 	postForm := struct {
-		component_appid    string
-		authorization_code string
+		Component_appid    string `json:"component_appid"`
+		Authorization_code string `json:"authorization_code"`
 	}{
-		component_appid:    na.wt.appId,
-		authorization_code: authCode,
+		Component_appid:    na.wt.appId,
+		Authorization_code: authCode,
 	}
-
 	res, err := goreq.Request{
-		Method: "POST",
-		Uri:    fmt.Sprintf(apiQueryAuth, accessToken),
-		Body:   postForm,
+		Method:    "POST",
+		Uri:       fmt.Sprintf(apiQueryAuth, accessToken),
+		Body:      postForm,
+		ShowDebug: true,
 	}.Do()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 
 	}
 	result := &PublicInfo{}
 
-	ae, err := unmarshalResponseToJson(res, result)
+	err = unmarshalResponseToJson(res, result)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 
 	}
-	if ae != nil {
-		return nil, ae, nil
-	}
-	return result, nil, nil
+	return result, nil
 }
 
 // authorizer access token and refresh token
 type PublicToken struct {
-	AccessToken  string `json:"authorizer_access_token"`
-	ExpiresIn    int64  `json:"expires_in"`
-	RefreshToken string `json:"authorizer_refresh_token"`
+	AccessToken  string  `json:"authorizer_access_token"`
+	ExpiresIn    float64 `json:"expires_in"`
+	RefreshToken string  `json:"authorizer_refresh_token"`
 }
 
 // accessToken component access token
 // appId authorizer appId
 // refreshToken authorizer refresh token
-func (na *normalApi) GetAuthAccessToken(accessToken, appId, refreshToken string) (*PublicToken, *ApiError, error) {
+func (na *normalApi) GetAuthAccessToken(accessToken, appId, refreshToken string) (*PublicToken, error) {
 
 	postForm := struct {
 		Component_appid          string `json:"component_appid"`
@@ -93,21 +90,18 @@ func (na *normalApi) GetAuthAccessToken(accessToken, appId, refreshToken string)
 		Body:   postForm,
 	}.Do()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 
 	}
 
 	result := &PublicToken{}
 
-	ae, err := unmarshalResponseToJson(res, result)
+	err = unmarshalResponseToJson(res, result)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 
 	}
-	if ae != nil {
-		return nil, ae, nil
-	}
-	return result, nil, nil
+	return result, nil
 }
 
 type PublicProfile struct {
@@ -134,7 +128,7 @@ type PublicProfile struct {
 	} `json:"authorization_info"`
 }
 
-func (na *normalApi) GetAuthProfile(accessToken, appId string) (*PublicProfile, *ApiError, error) {
+func (na *normalApi) GetAuthProfile(accessToken, appId string) (*PublicProfile, error) {
 
 	postForm := struct {
 		Component_appid  string `json:"component_appid"`
@@ -150,20 +144,17 @@ func (na *normalApi) GetAuthProfile(accessToken, appId string) (*PublicProfile, 
 		Body:   postForm,
 	}.Do()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 
 	}
 	result := &PublicProfile{}
 
-	ae, err := unmarshalResponseToJson(res, result)
+	err = unmarshalResponseToJson(res, result)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 
 	}
-	if ae != nil {
-		return nil, ae, nil
-	}
-	return result, nil, nil
+	return result, nil
 }
 
 type PublicOption struct {
@@ -172,7 +163,7 @@ type PublicOption struct {
 	OptionValue string `json:"option_value"`
 }
 
-func (na *normalApi) GetAuthOption(accessToken, appId, option string) (*PublicOption, *ApiError, error) {
+func (na *normalApi) GetAuthOption(accessToken, appId, option string) (*PublicOption, error) {
 	postForm := struct {
 		Component_appid  string `json:"component_appid"`
 		Authorizer_appid string `json:"authorizer_appid"`
@@ -189,23 +180,20 @@ func (na *normalApi) GetAuthOption(accessToken, appId, option string) (*PublicOp
 		Body:   postForm,
 	}.Do()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 
 	}
 	result := &PublicOption{}
 
-	ae, err := unmarshalResponseToJson(res, result)
+	err = unmarshalResponseToJson(res, result)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 
 	}
-	if ae != nil {
-		return nil, ae, nil
-	}
-	return result, nil, nil
+	return result, nil
 }
 
-func (na *normalApi) SetAuthOption(accessToken, appId, optionName, optionValue string) (*ApiError, error) {
+func (na *normalApi) SetAuthOption(accessToken, appId, optionName, optionValue string) error {
 	postForm := struct {
 		Component_appid  string `json:"component_appid"`
 		Authorizer_appid string `json:"authorizer_appid"`
@@ -224,7 +212,7 @@ func (na *normalApi) SetAuthOption(accessToken, appId, optionName, optionValue s
 		Body:   postForm,
 	}.Do()
 	if err != nil {
-		return nil, err
+		return err
 
 	}
 	result := &ApiError{}

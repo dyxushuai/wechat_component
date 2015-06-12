@@ -166,7 +166,7 @@ func fillEncode(text []byte) []byte {
 }
 
 // 包装读写接口 使其能读写加解密
-type IOChipher interface {
+type IOCipher interface {
 	Encrypt(w io.Writer, b []byte) (err error)
 	Decrypt(r io.Reader) (b []byte, err error)
 }
@@ -177,7 +177,7 @@ type Cipher struct {
 	token string
 }
 
-func NewCipher(token, encodingAESKey, appID string) (IOChipher, error) {
+func NewCipher(token, encodingAESKey, appID string) (IOCipher, error) {
 	mc, err := newmessageCrypter(token, encodingAESKey, appID)
 	if err != nil {
 		return nil, err
@@ -235,6 +235,7 @@ func (c *Cipher) Decrypt(r io.Reader) (b []byte, err error) {
 	if err != nil {
 		return
 	}
+
 	b, _, err = c.messageCrypter.decrypt(from.Encrypt)
 	return
 }
