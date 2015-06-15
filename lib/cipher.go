@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -169,12 +170,17 @@ func fillEncode(text []byte) []byte {
 type IOCipher interface {
 	Encrypt(w io.Writer, b []byte) (err error)
 	Decrypt(r io.Reader) (b []byte, err error)
+	CheckSignature(w http.ResponseWriter, r *http.Request) bool
 }
 
 // 用于管道加密
 type Cipher struct {
 	messageCrypter
 	token string
+}
+
+func (c *Cipher) CheckSignature(w http.ResponseWriter, r *http.Request) bool {
+	return CheckSignature(c.token, w, r)
 }
 
 func NewCipher(token, encodingAESKey, appID string) (IOCipher, error) {
@@ -203,6 +209,7 @@ type cipherToWX struct {
 	Encrypt      charData
 	MsgSignature charData
 	TimeStamp    string
+	Nonce        charData
 }
 
 // 将b加密写入w
@@ -211,13 +218,15 @@ func (c *Cipher) Encrypt(w io.Writer, b []byte) (err error) {
 	if err != nil {
 		return
 	}
-
+	nonce := createNonceStr(16)
 	to := &cipherToWX{
 		Encrypt:   newCharData(result),
 		TimeStamp: strconv.FormatInt(time.Now().Unix(), 10),
+		Nonce:     newCharData(nonce),
 	}
+
 	// timestamp, nonce, encryptedMsg string)
-	to.MsgSignature = newCharData(MsgSign(c.token, to.TimeStamp, createNonceStr(16), result))
+	to.MsgSignature = newCharData(MsgSign(c.token, to.TimeStamp, nonce, result))
 	err = xml.NewEncoder(w).Encode(to)
 	return
 }
