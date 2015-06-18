@@ -18,6 +18,7 @@ func init() {
 	WechatComponentSDK = wechat.New(appId, appSecret, cryptoKey, token)
 }
 
+// 使用微信加解密算法封装读写接口
 var cipher, err = WechatComponentSDK.GetCipher()
 
 type request struct {
@@ -44,6 +45,7 @@ func (r *response) Write(p []byte) (n int, err error) {
 	return
 }
 
+// 检测微信的签名
 func CheckSign(w http.ResponseWriter, r *http.Request) {
 	if cipher.CheckSignature(c.Writer, c.Request) {
 		// check pass
