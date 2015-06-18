@@ -66,7 +66,6 @@ func Job() {
 	WechatComponentSDK.GetRegularApi().GetPreAuthCode(accessToken)
 }
 
-// 获取oauth地址
 func GetOauthUrl() string {
 	// redirectUrl 公众号oauth授权后 callback url
 	// preAuthCode 获取第三方平台 pre auth code
