@@ -18,7 +18,7 @@ func init() {
 	WechatComponentSDK = wechat.New(appId, appSecret, cryptoKey, token)
 }
 
-// 使用微信加解密算法封装读写接口
+// 使用微信加解密算法封装网络读写接口
 var cipher, err = WechatComponentSDK.GetCipher()
 
 type request struct {
@@ -36,7 +36,7 @@ func (r *request) Close() error {
 }
 
 type response struct {
-	gin.ResponseWriter
+	http.ResponseWriter
 }
 
 func (r *response) Write(p []byte) (n int, err error) {
