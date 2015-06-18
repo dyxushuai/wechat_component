@@ -53,7 +53,12 @@ func CheckSign(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// 定时api
+// 定时api接口
+type RegularApi interface {
+	GetAccessToken(ticket string) (string, float64)
+	GetPreAuthCode(accessToken string) (string, float64)
+}
+
 func Job() {
 	// 获取第三方平台 access token
 	WechatComponentSDK.GetRegularApi().GetAccessToken(ticket)
@@ -61,7 +66,14 @@ func Job() {
 	WechatComponentSDK.GetRegularApi().GetPreAuthCode(accessToken)
 }
 
-// 通用api
+// 通用api接口
+type NormalApi interface {
+	GetPublicInfo(accessToken, authCode string) (*PublicInfo, error)
+	GetAuthAccessToken(accessToken, appId, refreshToken string) (*PublicToken, error)
+	GetAuthProfile(accessToken, appId string) (*PublicProfile, error)
+	GetAuthOption(accessToken, appId, option string) (*PublicOption, error)
+	SetAuthOption(accessToken, appId, optionName, optionValue string) error
+}
 func Call() {
 	WechatComponentSDK.GetNormalApi().GetPublicInfo(accessToken, authCode)
 	...
