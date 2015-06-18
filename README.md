@@ -66,9 +66,19 @@ func Job() {
 	WechatComponentSDK.GetRegularApi().GetPreAuthCode(accessToken)
 }
 
+func GetOauthUrl() string {
+	// redirectUrl 公众号oauth授权后 callback url
+	// preAuthCode 获取第三方平台 pre auth code
+	return WechatComponentSDK.OAuthUrl(redirectUrl, preAuthCode)
+}
+
 // 通用api接口
 type NormalApi interface {
+ 	// accessToken 第三方平台 access token 
+ 	// authCode 公众号oauth获取的授权码
 	GetPublicInfo(accessToken, authCode string) (*PublicInfo, error)
+	// appId 公众号 appId
+	// refreshToken 公众号 刷新 access token 令牌
 	GetAuthAccessToken(accessToken, appId, refreshToken string) (*PublicToken, error)
 	GetAuthProfile(accessToken, appId string) (*PublicProfile, error)
 	GetAuthOption(accessToken, appId, option string) (*PublicOption, error)
