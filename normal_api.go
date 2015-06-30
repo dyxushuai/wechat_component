@@ -43,10 +43,9 @@ func (na *normalApi) GetPublicInfo(accessToken, authCode string) (*PublicInfo, e
 		Authorization_code: authCode,
 	}
 	res, err := goreq.Request{
-		Method:    "POST",
-		Uri:       fmt.Sprintf(apiQueryAuth, accessToken),
-		Body:      postForm,
-		ShowDebug: true,
+		Method: "POST",
+		Uri:    fmt.Sprintf(apiQueryAuth, accessToken),
+		Body:   postForm,
 	}.Do()
 	if err != nil {
 		return nil, err
