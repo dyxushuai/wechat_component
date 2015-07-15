@@ -65,3 +65,19 @@ func CheckSignature(t string, w http.ResponseWriter, r *http.Request) bool {
 
 	return Sign(t, timestamp, nonce) == signature
 }
+
+func CheckSignatureInQuery(t string, w http.ResponseWriter, r *http.Request) bool {
+	signature := query(r, "signature")
+	timestamp := query(r, "timestamp")
+	nonce := query(r, "nonce")
+
+	return Sign(t, timestamp, nonce) == signature
+}
+
+func query(r *http.Request, key string) string {
+
+	if values, ok := r.URL.Query()[key]; ok && len(values) > 0 {
+		return values[0]
+	}
+	return ""
+}

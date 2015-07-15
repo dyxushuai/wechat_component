@@ -170,7 +170,8 @@ func fillEncode(text []byte) []byte {
 type IOCipher interface {
 	Encrypt(w io.Writer, b []byte) (err error)
 	Decrypt(r io.Reader) (b []byte, err error)
-	CheckSignature(w http.ResponseWriter, r *http.Request) bool
+	CheckSign(w http.ResponseWriter, r *http.Request) bool
+	CheckSignQuery(w http.ResponseWriter, r *http.Request) bool
 }
 
 // 用于管道加密
@@ -179,8 +180,12 @@ type Cipher struct {
 	token string
 }
 
-func (c *Cipher) CheckSignature(w http.ResponseWriter, r *http.Request) bool {
+func (c *Cipher) CheckSign(w http.ResponseWriter, r *http.Request) bool {
 	return CheckSignature(c.token, w, r)
+}
+
+func (c *Cipher) CheckSignQuery(w http.ResponseWriter, r *http.Request) bool {
+	return CheckSignatureInQuery(c.token, w, r)
 }
 
 func NewCipher(token, encodingAESKey, appID string) (IOCipher, error) {
