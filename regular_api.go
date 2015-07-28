@@ -21,7 +21,7 @@ type regularApi struct {
 // 获取第三方平台令牌
 func (ra *regularApi) GetAccessToken(ticket string) (string, float64) {
 
-	postForm := struct {
+	postData := struct {
 		Component_appid         string `json:"component_appid"`
 		Component_appsecret     string `json:"component_appsecret"`
 		Component_verify_ticket string `json:"component_verify_ticket"`
@@ -34,7 +34,7 @@ func (ra *regularApi) GetAccessToken(ticket string) (string, float64) {
 	res, err := goreq.Request{
 		Method: "POST",
 		Uri:    apiComponentToken,
-		Body:   postForm,
+		Body:   postData,
 	}.Do()
 	if err != nil {
 		log.Println("getAccessToken api failed: ", err.Error())
@@ -56,7 +56,7 @@ func (ra *regularApi) GetAccessToken(ticket string) (string, float64) {
 
 // 获取预授权码，用于公众号oauth
 func (ra *regularApi) GetPreAuthCode(accessToken string) (string, float64) {
-	postForm := struct {
+	postData := struct {
 		Component_appid string `json:"component_appid"`
 	}{
 		Component_appid: ra.wt.appId,
@@ -65,7 +65,7 @@ func (ra *regularApi) GetPreAuthCode(accessToken string) (string, float64) {
 	res, err := goreq.Request{
 		Method: "POST",
 		Uri:    fmt.Sprintf(apiCreatePreAuthCode, accessToken),
-		Body:   postForm,
+		Body:   postData,
 	}.Do()
 	if err != nil {
 		log.Println("getPreAuthCode api failed: ", err.Error())

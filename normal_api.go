@@ -35,7 +35,7 @@ type PublicInfo struct {
 }
 
 func (na *normalApi) GetPublicInfo(accessToken, authCode string) (*PublicInfo, error) {
-	postForm := struct {
+	postData := struct {
 		Component_appid    string `json:"component_appid"`
 		Authorization_code string `json:"authorization_code"`
 	}{
@@ -45,7 +45,7 @@ func (na *normalApi) GetPublicInfo(accessToken, authCode string) (*PublicInfo, e
 	res, err := goreq.Request{
 		Method: "POST",
 		Uri:    fmt.Sprintf(apiQueryAuth, accessToken),
-		Body:   postForm,
+		Body:   postData,
 	}.Do()
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ type PublicToken struct {
 // refreshToken authorizer refresh token
 func (na *normalApi) GetAuthAccessToken(accessToken, appId, refreshToken string) (*PublicToken, error) {
 
-	postForm := struct {
+	postData := struct {
 		Component_appid          string `json:"component_appid"`
 		Authorizer_appid         string `json:"authorizer_appid"`
 		Authorizer_refresh_token string `json:"authorizer_refresh_token"`
@@ -86,7 +86,7 @@ func (na *normalApi) GetAuthAccessToken(accessToken, appId, refreshToken string)
 	res, err := goreq.Request{
 		Method: "POST",
 		Uri:    fmt.Sprintf(apiAuthorizerToken, accessToken),
-		Body:   postForm,
+		Body:   postData,
 	}.Do()
 	if err != nil {
 		return nil, err
